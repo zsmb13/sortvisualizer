@@ -1,60 +1,92 @@
 #include <SDL.h>
 #include <SDL2_gfxPrimitives.h>
 
-const int WIDTH = 1280;
-const int HEIGHT = 720;
+const int COLUMNS = 120;
+const int WIDTH = COLUMNS*10;
+const int HEIGHT = 800;
 
-void bubble_sort(int t[], int len) {
+const int unit = HEIGHT/COLUMNS;
+
+SDL_Event ev;
+
+class Graph {
+    int array[COLUMNS];
+    SDL_Renderer *graphRenderer;
+public:
+    Graph(SDL_Renderer *renderer) : graphRenderer(renderer) {
+        for(int i = 0; i < COLUMNS; i++)
+            array[i] = i;
+    }
+
+    void draw() {
+        for(int i = 0; i < COLUMNS; i++) {
+            boxRGBA(graphRenderer, i*10, HEIGHT, (i+1)*10, HEIGHT-array[i]*unit, 200, 200, 200, 255);
+        }
+        SDL_RenderPresent(graphRenderer);
+    }
+    
+    void scramble() {
+        
+    }
+
+    /*void update() {
+        
+    }*/
+};
+
+
+void bubble_sort(int array[], int len) {
     int i, j;
  
     for (i = len-1; i > 0; --i)
         for (j = 0; j < i; ++j)
-            if (t[j+1] < t[j]) {
-                int temp = t[j];
-                t[j] = t[j+1];
-                t[j+1] = temp;
+            if (array[j+1] < array[j]) {
+                int temp = array[j];
+                array[j] = array[j+1];
+                array[j+1] = temp;
             }
 }
 
-void selection_sort(int t[], int len) {
+void selection_sort(int array[], int len) {
     int i, j, minindex;
 
     for (i = 0; i < len-1; ++i) {
         minindex = i;
         for (j = i+1; j < len; ++j) {
-            if (t[j] < t[minindex])
+            if (array[j] < array[minindex])
                 minindex = j;
             if (minindex != i) {
-                int temp = t[minindex];
-                t[minindex] = t[i];
-                t[i] = temp;
+                int temp = array[minindex];
+                array[minindex] = array[i];
+                array[i] = temp;
             }
         }
     }
 }
 
-void gnome_sort(int t[], int len) {
+void gnome_sort(int array[], int len) {
     int i = 0;
     
     while (i < len) {
-        if (i == 0 || t[i-1] <= t[i])
+        if (i == 0 || array[i-1] <= array[i])
             i++;
         else {
-            int tmp = t[i];
-            t[i] = t[i-1];
-            t[i-1] = tmp;
+            int tmp = array[i];
+            array[i] = array[i-1];
+            array[i-1] = tmp;
             i--;
         }
     }
 }
 
+
+
 int main(int argc, char *argv[]) {
-    SDL_Event ev;
     SDL_Window *sdlWindow;
     SDL_Renderer *sdlRenderer;
     try {
-        sdlWindow = SDL_CreateWindow("Title",
-                                 SDL_WINDOWPOS_UNDEFINED,	// Alternatively, use SDL_WINDOWPOS_CENTERED here
+        sdlWindow = SDL_CreateWindow("Sort visualizer",
+                                 SDL_WINDOWPOS_UNDEFINED,    // Alternatively, use SDL_WINDOWPOS_CENTERED here
                                  SDL_WINDOWPOS_UNDEFINED,
                                  WIDTH, HEIGHT,
                                  0);
@@ -71,7 +103,14 @@ int main(int argc, char *argv[]) {
 
     boxColor(sdlRenderer, 0, 0, WIDTH, HEIGHT, 0x000000FF);
     SDL_RenderPresent(sdlRenderer);
-
+    
+    
+    
+    Graph g(sdlRenderer);
+    g.scramble();
+    g.draw();
+    
+    
     bool quit = false;
     while(SDL_WaitEvent(&ev) && !quit) {
         switch(ev.type) {
