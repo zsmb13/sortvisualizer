@@ -4,46 +4,46 @@
 const int WIDTH = 1280;
 const int HEIGHT = 720;
 
-void buborek(double t[], int db) {
-   int i, j;
+void bubble_sort(int t[], int len) {
+    int i, j;
  
-   /* egyre rövidebb tömbrészletek ciklusa */
-   for (i = db-1; i > 0; --i)
-      /* egymás utáni párok ciklusa */
-      for (j = 0; j < i; ++j)
-         if (t[j+1] < t[j]) {      /* összehasonlítás */
-            double temp = t[j];
-            t[j] = t[j+1];         /* csere */
-            t[j+1] = temp;
-         }
+    for (i = len-1; i > 0; --i)
+        for (j = 0; j < i; ++j)
+            if (t[j+1] < t[j]) {
+                int temp = t[j];
+                t[j] = t[j+1];
+                t[j+1] = temp;
+            }
 }
 
-void kozvetlen(double t[], int db) {
-   int i, j, minindex;
- 
-   for (i = 0; i < db-1; ++i) {
-      minindex = i;                /* minimum keresése */
-      for (j = i+1; j < db; ++j)
-         if (t[j] < t[minindex])
-            minindex = j;
-      if (minindex != i) {         /* csere? */
-         double temp = t[minindex];
-         t[minindex] = t[i];       /* csere. */
-         t[i] = temp;
-      }
-   }
+void selection_sort(int t[], int len) {
+    int i, j, minindex;
+
+    for (i = 0; i < len-1; ++i) {
+        minindex = i;
+        for (j = i+1; j < len; ++j) {
+            if (t[j] < t[minindex])
+                minindex = j;
+            if (minindex != i) {
+                int temp = t[minindex];
+                t[minindex] = t[i];
+                t[i] = temp;
+            }
+        }
+    }
 }
 
-void torperendez(double t[], int db) {
+void gnome_sort(int t[], int len) {
     int i = 0;
-    while (i < db) {
-        if (i == 0 || t[i-1] <= t[i]) { /* jó sorrend? */
-            i++;                /* előre */
-        } else {
-            double tmp = t[i];  /* csere */
+    
+    while (i < len) {
+        if (i == 0 || t[i-1] <= t[i])
+            i++;
+        else {
+            int tmp = t[i];
             t[i] = t[i-1];
             t[i-1] = tmp;
-            i--;                /* vissza */
+            i--;
         }
     }
 }
