@@ -82,21 +82,25 @@ public:
         return true;
     }
     
-    void update_text() {
+    void update_text(const char* str) {
+        text = str;
+        // Draw a black box over previous text (with 1 px padding on top and bottom)
+        // Text is 12px high
+        boxColor(graphRenderer, 0, HEIGHT+8-1, WIDTH, HEIGHT+8+12+1, 0x000000FF);
+        // Display the updated text
         stringRGBA(graphRenderer, 4, HEIGHT+8, text.c_str(), 255, 255, 255, 255);
+        // Commit changes
         SDL_RenderPresent(graphRenderer);
     }
     
     void bubble_sort() {        
-        SDL_TimerID id = SDL_AddTimer(5, timer, NULL);
+        SDL_TimerID id = SDL_AddTimer(2, timer, NULL);
         int i, j;
-        text = "Running bubble sort...";
-        update_text();
+        update_text("Running bubble sort...");
      
-        for (i = COLUMNS-1; i > 0; --i) {
+        for (i = COLUMNS-1; i > 0; --i)
             for (j = 0; j < i; ++j) {
                 current = j;
-                //
                 while(SDL_WaitEvent(&ev) && ev.type != SDL_USEREVENT);
                 draw();
                 
@@ -105,10 +109,15 @@ public:
                     array[j] = array[j+1];
                     array[j+1] = temp;
                 }
+                
                 sorted.insert(i);
             }
-        }
         
+        sorted.insert(0);
+        sorted.insert(1);
+        draw();
+        
+        update_text("Bubble sort done!");
         SDL_RemoveTimer(id);
     }
 
