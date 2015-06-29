@@ -1,3 +1,13 @@
+/* Sort visualizer
+ * 
+ * Selection, bubble and gnome sort from
+ * https://infoc.eet.bme.hu/ea07/
+ * 
+ * Heap sort from
+ * http://www.bogotobogo.com/Algorithms/heapsort.php
+ *
+ */
+
 #include <iostream>
 #include <ctime>
 #include <cstdlib>
@@ -71,6 +81,9 @@ public:
     }
     
     void scramble() {
+        sorted.clear();
+        special.clear();
+        current = -1;
         for(int i = 1; i <= COLUMNS*2; i++)
             swap_randomly();
         update_text("Array scrambled.");
@@ -94,6 +107,45 @@ public:
         SDL_RenderPresent(graphRenderer);
     }
     
+    void selection_sort() {
+        update_text("Running selection sort...");
+        SDL_TimerID id = SDL_AddTimer(5, timer, NULL);
+        
+        int i, j, minindex;
+        
+        for (i = 0; i < COLUMNS-1; ++i) {
+            minindex = i; // searching for the minimum
+            special.insert(i);
+            for (j = i+1; j < COLUMNS; ++j) {
+                current = j;
+                if (array[j] < array[minindex]) {
+                    minindex = j;
+                    special.clear();
+                    special.insert(j);
+                }
+                
+                while(SDL_WaitEvent(&ev) && ev.type != SDL_USEREVENT);
+                draw();
+            }
+            if (minindex != i) { // swap?
+                int temp = array[minindex];
+                array[minindex] = array[i]; // swap.
+                array[i] = temp;
+            }
+            special.clear();
+            sorted.insert(i);
+        }
+       
+        SDL_RemoveTimer(id);
+        
+        current = -1;
+        sorted.insert(COLUMNS-2);
+        sorted.insert(COLUMNS-1);
+        draw();
+        
+        update_text("Selection sort done!");
+    }
+    
     void bubble_sort() {        
         update_text("Running bubble sort...");
         SDL_TimerID id = SDL_AddTimer(2, timer, NULL);
@@ -107,9 +159,9 @@ public:
                 while(SDL_WaitEvent(&ev) && ev.type != SDL_USEREVENT);
                 draw();
                 
-                if (array[j+1] < array[j]) {
+                if (array[j+1] < array[j]) { // comparison
                     int temp = array[j];
-                    array[j] = array[j+1];
+                    array[j] = array[j+1]; // swap
                     array[j+1] = temp;
                 }
                 
@@ -119,51 +171,14 @@ public:
         
         SDL_RemoveTimer(id);
 
+        current = -1;
         sorted.insert(0);
         sorted.insert(1);
         draw();
         
         update_text("Bubble sort done!");
     }
-
-    void selection_sort() {
-        update_text("Running selection sort...");
-        SDL_TimerID id = SDL_AddTimer(5, timer, NULL);
-        
-        int i, j, minindex;
-        
-        for (i = 0; i < COLUMNS-1; ++i) {
-            minindex = i;
-            special.insert(i);
-            for (j = i+1; j < COLUMNS; ++j) {
-                current = j;
-                if (array[j] < array[minindex]) {
-                    minindex = j;
-                    special.clear();
-                    special.insert(j);
-                }
-                
-                while(SDL_WaitEvent(&ev) && ev.type != SDL_USEREVENT);
-                draw();
-            }
-            if (minindex != i) {
-                int temp = array[minindex];
-                array[minindex] = array[i];
-                array[i] = temp;
-            }
-            special.clear();
-            sorted.insert(i);
-        }
-       
-        SDL_RemoveTimer(id);
-        
-        sorted.insert(COLUMNS-2);
-        sorted.insert(COLUMNS-1);
-        draw();
-        
-        update_text("Selection sort done!");
-    }
-
+    
     void gnome_sort() {
         update_text("Running gnome sort...");
         SDL_TimerID id = SDL_AddTimer(5, timer, NULL);
@@ -173,7 +188,7 @@ public:
         while (i < COLUMNS) {
             current = i;
             
-            if (i == 0 || array[i-1] <= array[i]) {
+            if (i == 0 || array[i-1] <= array[i]) { // in order?
                 current = -1;
                 i++;
                 sorted.insert(i);
@@ -185,7 +200,7 @@ public:
                 i--;
                 current = i;
             }
-
+            
             while(SDL_WaitEvent(&ev) && ev.type != SDL_USEREVENT);
             draw();
         }
@@ -203,11 +218,14 @@ public:
         SDL_TimerID id = SDL_AddTimer(20, timer, NULL);
         
         while(!is_sorted()) {
-            scramble();
+            for(int i = 1; i <= COLUMNS*2; i++)
+                swap_randomly();
             
             // Add some colour to it
-            if(rand()%10)
+            if(rand()%20) {
+                current = rand()%COLUMNS;
                 special.insert(rand()%COLUMNS);
+            }
             // But not too much
             else
                 special.clear();
@@ -226,7 +244,82 @@ public:
         update_text("Wow. Would you look at that. Bogo sort done.");
     }
     
-    
+    /* HEAP SORT */
+    void swap(int &m, int &n) {
+        int tmp;
+        tmp = m;
+        m = n;
+        n = tmp;
+    }
+
+    void heap_sort(int N){
+        update_text("Running heap sort");
+        SDL_TimerID id = SDL_AddTimer(20, timer, NULL);
+        
+        /* heapify */
+        for (int k = N/2; k >= 0; k--) {
+            siftDown(k, N);
+        }
+                
+        while (N-1 > 0) {
+            /* swap the root(maximum value) of the heap
+            with the last element of the heap */
+            swap(array[N-1], array[0]);
+            sorted.insert(N-1);
+            draw();
+            
+            /* put the heap back in max-heap order */
+            siftDown(0, N-1);
+            /* N-- : decrease the size of the heap by one
+            so that the previous max value will
+            stay in its proper placement */
+            N--;
+            
+            while(SDL_WaitEvent(&ev) && ev.type != SDL_USEREVENT);
+            draw();
+        }
+        
+        SDL_RemoveTimer(id);
+        
+        current = -1;
+        sorted.insert(0);
+        draw();
+        
+        update_text("Heap sort done!");
+    }
+
+    void siftDown(int k, int N){
+        while ( k*2 + 1 < N ) {
+            current = k;
+            
+            /* For zero-based arrays, the children are 2*i+1 and 2*i+2 */
+            int child = 2*k + 1;
+            
+            special.insert(child);
+            special.insert(child+1);
+            
+            while(SDL_WaitEvent(&ev) && ev.type != SDL_USEREVENT);
+            draw();
+            
+            /* get bigger child if there are two children */
+            if ((child + 1 < N) && (array[child] < array[child+1]))
+                child++;
+            
+            special.clear();
+            
+            if (array[k] < array[child]) {   /* out of max-heap order */
+                swap( array[child], array[k] );
+                /* repeat to continue sifting down the child now */
+                k = child;
+            }
+            else
+                return;
+            
+            
+            while(SDL_WaitEvent(&ev) && ev.type != SDL_USEREVENT);
+            draw();
+        }
+    }
 };
 
 /* MAIN */
@@ -290,6 +383,10 @@ int main(int argc, char *argv[]) {
                     case SDLK_4:
                     case SDLK_KP_4:
                         g.bogo_sort();
+                    break;
+                    case SDLK_5:
+                    case SDLK_KP_5:
+                        g.heap_sort(COLUMNS);
                     break;
                 }
             break;
