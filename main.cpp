@@ -122,19 +122,23 @@ public:
     }
 
     void selection_sort() {
-        SDL_TimerID id = SDL_AddTimer(50, timer, NULL);
+        SDL_TimerID id = SDL_AddTimer(5, timer, NULL);
         int i, j, minindex;
-
+        
+        update_text("Running selection sort...");
+        
         for (i = 0; i < COLUMNS-1; ++i) {
             minindex = i;
-            current = i;
+            special.insert(i);
             for (j = i+1; j < COLUMNS; ++j) {
+                current = j;
                 if (array[j] < array[minindex]) {
                     minindex = j;
+                    special.clear();
+                    special.insert(j);
                 }
-                //
-                // this hangs the program (apparently indefinitely) for some reason
-                // while(SDL_WaitEvent(&ev) && ev.type != SDL_USEREVENT);
+                
+                while(SDL_WaitEvent(&ev) && ev.type != SDL_USEREVENT);
                 draw();
             }
             if (minindex != i) {
@@ -142,9 +146,15 @@ public:
                 array[minindex] = array[i];
                 array[i] = temp;
             }
+            special.clear();
             sorted.insert(i);
         }
         
+        sorted.insert(COLUMNS-2);
+        sorted.insert(COLUMNS-1);
+        draw();
+        
+        update_text("Selection sort done!");
         SDL_RemoveTimer(id);
     }
 
@@ -216,8 +226,8 @@ int main(int argc, char *argv[]) {
     Graph g(sdlRenderer);
     g.scramble();
     g.draw();
-    //g.selection_sort();
-    g.bubble_sort();
+    g.selection_sort();
+    //g.bubble_sort();
     //g.gnome_sort();
     //g.bogo_sort();
     
