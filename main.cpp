@@ -17,7 +17,7 @@
 #include <SDL2_gfxPrimitives.h>
 
 /* GLOBALS */
-const int COLUMNS = 120;
+const int COLUMNS = 120; /* min value : 73*/
 const int WIDTH = COLUMNS*10;
 const int HEIGHT = 600;
 
@@ -39,6 +39,7 @@ class Graph {
     std::set<int> special;
     std::set<int> sorted;
     std::string text;
+    std::string menu_text;
     int current;
     SDL_Renderer *graphRenderer;
 public:
@@ -48,6 +49,20 @@ public:
     {
         for(int i = 0; i < COLUMNS; i++)
             array[i] = i+1;
+        
+        std::string options[] =  {  "(0) Scramble",
+                                    "(1) Selection sort",
+                                    "(2) Bubble sort",
+                                    "(3) Gnome sort",
+                                    "(4) Bogo sort",
+                                    "(5) Heap sort" 
+                                    };
+        for(auto x : options)
+            menu_text += x + ' ';
+        
+        draw();
+        draw_menu();
+        update_text("");
     }
 
     void draw() const {
@@ -66,7 +81,7 @@ public:
             else
                 boxRGBA(graphRenderer, i*10, HEIGHT, (i+1)*10, HEIGHT-array[i]*unit, 200, 200, 200, 255);
             
-            rectangleRGBA(graphRenderer, i*10, HEIGHT, (i+1)*10, HEIGHT-array[i]*unit, 255, 255, 255, 255);
+            rectangleColor(graphRenderer, i*10, HEIGHT, (i+1)*10, HEIGHT-array[i]*unit, 0xFFFFFFFF);
         }
         SDL_RenderPresent(graphRenderer);
     }
@@ -80,10 +95,14 @@ public:
         array[ind2] = temp;
     }
     
-    void scramble() {
+    void reset() {
         sorted.clear();
         special.clear();
         current = -1;
+    }
+    
+    void scramble() {
+        reset();
         for(int i = 1; i <= COLUMNS*2; i++)
             swap_randomly();
         update_text("Array scrambled.");
@@ -98,16 +117,23 @@ public:
     
     void update_text(const char* str) {
         text = str;
-        // Draw a black box over previous text (with 1 px padding on top and bottom)
+        // Draw a black box over previous text
         // Text is 12px high
-        boxColor(graphRenderer, 0, HEIGHT+8-1, WIDTH, HEIGHT+8+12+1, 0x000000FF);
+        boxColor(graphRenderer, 0, HEIGHT, WIDTH, HEIGHT+19, 0x000000FF);
         // Display the updated text
         stringRGBA(graphRenderer, 4, HEIGHT+8, text.c_str(), 255, 255, 255, 255);
         // Commit changes
         SDL_RenderPresent(graphRenderer);
     }
     
+    void draw_menu() {
+        lineColor(graphRenderer, 0, HEIGHT+20, WIDTH, HEIGHT+20, 0xFFFFFF88);
+        stringRGBA(graphRenderer, 4, HEIGHT+28, menu_text.c_str(), 255, 255, 255, 255);
+        SDL_RenderPresent(graphRenderer);
+    }
+    
     void selection_sort() {
+        reset();
         update_text("Running selection sort...");
         SDL_TimerID id = SDL_AddTimer(5, timer, NULL);
         
@@ -147,6 +173,7 @@ public:
     }
     
     void bubble_sort() {        
+        reset();
         update_text("Running bubble sort...");
         SDL_TimerID id = SDL_AddTimer(2, timer, NULL);
         
@@ -180,6 +207,7 @@ public:
     }
     
     void gnome_sort() {
+        reset();
         update_text("Running gnome sort...");
         SDL_TimerID id = SDL_AddTimer(5, timer, NULL);
         
@@ -214,6 +242,7 @@ public:
     }
 
     void bogo_sort() {
+        reset();
         update_text("Running bogo sort... (This may take a while, please be patient.)");
         SDL_TimerID id = SDL_AddTimer(20, timer, NULL);
         
@@ -253,7 +282,8 @@ public:
     }
 
     void heap_sort(int N){
-        update_text("Running heap sort");
+        reset();
+        update_text("Running heap sort...");
         SDL_TimerID id = SDL_AddTimer(20, timer, NULL);
         
         /* heapify */
@@ -331,7 +361,7 @@ int main(int argc, char *argv[]) {
         sdlWindow = SDL_CreateWindow("Sort visualizer",
                                  SDL_WINDOWPOS_UNDEFINED,    // Alternatively, use SDL_WINDOWPOS_CENTERED here
                                  SDL_WINDOWPOS_UNDEFINED,
-                                 WIDTH, HEIGHT+20,
+                                 WIDTH, HEIGHT+2*20,
                                  0);
         if(sdlWindow == NULL) throw 1;
         
@@ -349,7 +379,6 @@ int main(int argc, char *argv[]) {
     
     Graph g(sdlRenderer);
     g.update_text("Sort visualizer loaded, please choose an option from below!");
-    g.draw();
     
     bool quit = false;
     while(SDL_WaitEvent(&ev) && !quit) {
