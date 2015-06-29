@@ -2,13 +2,14 @@
 #include <ctime>
 #include <cstdlib>
 #include <set>
+#include <string>
 #include <SDL.h>
 #include <SDL2_gfxPrimitives.h>
 
 /* GLOBALS */
 const int COLUMNS = 120;
 const int WIDTH = COLUMNS*10;
-const int HEIGHT = 720;
+const int HEIGHT = 600;
 
 const double unit = (double)HEIGHT/COLUMNS;
 
@@ -27,6 +28,7 @@ class Graph {
     int array[COLUMNS];
     std::set<int> special;
     std::set<int> sorted;
+    std::string text;
     int current;
     SDL_Renderer *graphRenderer;
 public:
@@ -72,10 +74,6 @@ public:
         for(int i = 1; i <= COLUMNS*2; i++)
             swap_randomly();
     }
-
-    /*void update() {
-        
-    }*/
     
     bool is_sorted() {
         for(int i = 0; i < COLUMNS-1; i++)
@@ -84,12 +82,20 @@ public:
         return true;
     }
     
-    void bubble_sort(SDL_TimerID& id) {        
-        id = SDL_AddTimer(5, timer, NULL);
+    void update_text() {
+        stringRGBA(graphRenderer, 4, HEIGHT+8, text.c_str(), 255, 255, 255, 255);
+        SDL_RenderPresent(graphRenderer);
+    }
+    
+    void bubble_sort() {        
+        SDL_TimerID id = SDL_AddTimer(5, timer, NULL);
         int i, j;
+        text = "Running bubble sort...";
+        update_text();
      
-        for (i = COLUMNS-1; i > 0; --i)
+        for (i = COLUMNS-1; i > 0; --i) {
             for (j = 0; j < i; ++j) {
+                current = j;
                 //
                 while(SDL_WaitEvent(&ev) && ev.type != SDL_USEREVENT);
                 draw();
@@ -99,11 +105,15 @@ public:
                     array[j] = array[j+1];
                     array[j+1] = temp;
                 }
+                sorted.insert(i);
             }
+        }
+        
+        SDL_RemoveTimer(id);
     }
 
-    void selection_sort(SDL_TimerID& id) {
-        id = SDL_AddTimer(50, timer, NULL);
+    void selection_sort() {
+        SDL_TimerID id = SDL_AddTimer(50, timer, NULL);
         int i, j, minindex;
 
         for (i = 0; i < COLUMNS-1; ++i) {
@@ -125,36 +135,45 @@ public:
             }
             sorted.insert(i);
         }
+        
+        SDL_RemoveTimer(id);
     }
 
-    void gnome_sort(SDL_TimerID& id) {
-        id = SDL_AddTimer(5, timer, NULL);
+    void gnome_sort() {
+        SDL_TimerID id = SDL_AddTimer(5, timer, NULL);
         int i = 0;
         
         while (i < COLUMNS) {
-            // 
-            while(SDL_WaitEvent(&ev) && ev.type != SDL_USEREVENT);
-            draw();
+            current = i;
             
-            if (i == 0 || array[i-1] <= array[i])
+            
+            if (i == 0 || array[i-1] <= array[i]) {
                 i++;
+                sorted.insert(i);
+            }
             else {
                 int tmp = array[i];
                 array[i] = array[i-1];
                 array[i-1] = tmp;
                 i--;
             }
+            // 
+            while(SDL_WaitEvent(&ev) && ev.type != SDL_USEREVENT);
+            draw();
         }
+        
+        SDL_RemoveTimer(id);
     }
 
-    void bogo_sort(SDL_TimerID& id) {
-        id = SDL_AddTimer(10, timer, NULL);
+    void bogo_sort() {
+        SDL_TimerID id = SDL_AddTimer(10, timer, NULL);
         while(!is_sorted()) {
             scramble();
             //
             while(SDL_WaitEvent(&ev) && ev.type != SDL_USEREVENT);
             draw();
         }
+        SDL_RemoveTimer(id);
     }
     
     
@@ -165,12 +184,11 @@ int main(int argc, char *argv[]) {
     srand(time(0));
     SDL_Window *sdlWindow;
     SDL_Renderer *sdlRenderer;
-    SDL_TimerID id;
     try {
         sdlWindow = SDL_CreateWindow("Sort visualizer",
                                  SDL_WINDOWPOS_UNDEFINED,    // Alternatively, use SDL_WINDOWPOS_CENTERED here
                                  SDL_WINDOWPOS_UNDEFINED,
-                                 WIDTH, HEIGHT,
+                                 WIDTH, HEIGHT+20,
                                  0);
         if(sdlWindow == NULL) throw 1;
         
@@ -182,17 +200,17 @@ int main(int argc, char *argv[]) {
         return error;
     }
 
-
+    // Set black background as a start, just to be sure
     boxColor(sdlRenderer, 0, 0, WIDTH, HEIGHT, 0x000000FF);
     SDL_RenderPresent(sdlRenderer);    
     
     Graph g(sdlRenderer);
     g.scramble();
     g.draw();
-    g.selection_sort(id);
-    //g.bubble_sort(id);
-    //g.gnome_sort(id);
-    //g.bogo_sort(id);
+    //g.selection_sort();
+    g.bubble_sort();
+    //g.gnome_sort();
+    //g.bogo_sort();
     
     bool quit = false;
     while(SDL_WaitEvent(&ev) && !quit) {
@@ -206,7 +224,6 @@ int main(int argc, char *argv[]) {
         }
     }
     
-    SDL_RemoveTimer(id);
     SDL_Quit();
     return 0;
 }
