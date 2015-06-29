@@ -43,15 +43,15 @@ public:
     void draw() const {
         boxColor(graphRenderer, 0, 0, WIDTH, HEIGHT, 0x0000FF);
         for(int i = 0; i < COLUMNS; i++) {
+            // current
+            if(i == current)
+                boxRGBA(graphRenderer, i*10, HEIGHT, (i+1)*10, HEIGHT-array[i]*unit, 255, 40, 40, 255);
             // sorted 
-            if(sorted.find(i) != sorted.end()) 
+            else if(sorted.find(i) != sorted.end()) 
                 boxRGBA(graphRenderer, i*10, HEIGHT, (i+1)*10, HEIGHT-array[i]*unit, 0, 255, 0, 255);
             // special
             else if(special.find(i) != special.end())
                 boxRGBA(graphRenderer, i*10, HEIGHT, (i+1)*10, HEIGHT-array[i]*unit, 0, 150, 255, 255);
-            // current
-            else if(i == current)
-                boxRGBA(graphRenderer, i*10, HEIGHT, (i+1)*10, HEIGHT-array[i]*unit, 255, 40, 40, 255);
             // all others
             else
                 boxRGBA(graphRenderer, i*10, HEIGHT, (i+1)*10, HEIGHT-array[i]*unit, 200, 200, 200, 255);
@@ -73,6 +73,7 @@ public:
     void scramble() {
         for(int i = 1; i <= COLUMNS*2; i++)
             swap_randomly();
+        update_text("Array scrambled.");
     }
     
     bool is_sorted() {
@@ -94,13 +95,15 @@ public:
     }
     
     void bubble_sort() {        
-        SDL_TimerID id = SDL_AddTimer(2, timer, NULL);
-        int i, j;
         update_text("Running bubble sort...");
+        SDL_TimerID id = SDL_AddTimer(2, timer, NULL);
+        
+        int i, j;
      
-        for (i = COLUMNS-1; i > 0; --i)
+        for (i = COLUMNS-1; i > 0; --i) {
             for (j = 0; j < i; ++j) {
                 current = j;
+                
                 while(SDL_WaitEvent(&ev) && ev.type != SDL_USEREVENT);
                 draw();
                 
@@ -112,20 +115,22 @@ public:
                 
                 sorted.insert(i);
             }
+        }
         
+        SDL_RemoveTimer(id);
+
         sorted.insert(0);
         sorted.insert(1);
         draw();
         
         update_text("Bubble sort done!");
-        SDL_RemoveTimer(id);
     }
 
     void selection_sort() {
-        SDL_TimerID id = SDL_AddTimer(5, timer, NULL);
-        int i, j, minindex;
-        
         update_text("Running selection sort...");
+        SDL_TimerID id = SDL_AddTimer(5, timer, NULL);
+        
+        int i, j, minindex;
         
         for (i = 0; i < COLUMNS-1; ++i) {
             minindex = i;
@@ -149,24 +154,27 @@ public:
             special.clear();
             sorted.insert(i);
         }
+       
+        SDL_RemoveTimer(id);
         
         sorted.insert(COLUMNS-2);
         sorted.insert(COLUMNS-1);
         draw();
         
         update_text("Selection sort done!");
-        SDL_RemoveTimer(id);
     }
 
     void gnome_sort() {
+        update_text("Running gnome sort...");
         SDL_TimerID id = SDL_AddTimer(5, timer, NULL);
+        
         int i = 0;
         
         while (i < COLUMNS) {
             current = i;
             
-            
             if (i == 0 || array[i-1] <= array[i]) {
+                current = -1;
                 i++;
                 sorted.insert(i);
             }
@@ -175,24 +183,47 @@ public:
                 array[i] = array[i-1];
                 array[i-1] = tmp;
                 i--;
+                current = i;
             }
-            // 
+
             while(SDL_WaitEvent(&ev) && ev.type != SDL_USEREVENT);
             draw();
         }
         
         SDL_RemoveTimer(id);
+        
+        sorted.insert(0);
+        draw();
+        
+        update_text("Gnome sort done!");
     }
 
     void bogo_sort() {
-        SDL_TimerID id = SDL_AddTimer(10, timer, NULL);
+        update_text("Running bogo sort... (This may take a while, please be patient.)");
+        SDL_TimerID id = SDL_AddTimer(20, timer, NULL);
+        
         while(!is_sorted()) {
             scramble();
-            //
+            
+            // Add some colour to it
+            if(rand()%10)
+                special.insert(rand()%COLUMNS);
+            // But not too much
+            else
+                special.clear();
+                
             while(SDL_WaitEvent(&ev) && ev.type != SDL_USEREVENT);
             draw();
         }
+        
         SDL_RemoveTimer(id);
+        
+        for(int i = 0; i < COLUMNS; i++)
+            sorted.insert(i);
+        draw();
+        
+        // Celebrate improbability
+        update_text("Wow. Would you look at that. Bogo sort done.");
     }
     
     
@@ -224,12 +255,8 @@ int main(int argc, char *argv[]) {
     SDL_RenderPresent(sdlRenderer);    
     
     Graph g(sdlRenderer);
-    g.scramble();
+    g.update_text("Sort visualizer loaded, please choose an option from below!");
     g.draw();
-    g.selection_sort();
-    //g.bubble_sort();
-    //g.gnome_sort();
-    //g.bogo_sort();
     
     bool quit = false;
     while(SDL_WaitEvent(&ev) && !quit) {
@@ -238,7 +265,33 @@ int main(int argc, char *argv[]) {
                 quit = true;
             break;
             case SDL_KEYDOWN:
-                quit = true;
+                switch(ev.key.keysym.sym) {
+                    case SDLK_ESCAPE:
+                        quit = true;
+                    break;
+                    case SDLK_BACKQUOTE:
+                    case SDLK_0:
+                    case SDLK_KP_0:
+                        g.scramble();
+                        g.draw();
+                    break;
+                    case SDLK_1:
+                    case SDLK_KP_1:
+                        g.selection_sort();
+                    break;
+                    case SDLK_2:
+                    case SDLK_KP_2:
+                        g.bubble_sort();
+                    break;
+                    case SDLK_3:
+                    case SDLK_KP_3:
+                        g.gnome_sort();
+                    break;
+                    case SDLK_4:
+                    case SDLK_KP_4:
+                        g.bogo_sort();
+                    break;
+                }
             break;
         }
     }
