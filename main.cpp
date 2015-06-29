@@ -17,9 +17,9 @@
 #include <SDL2_gfxPrimitives.h>
 
 /* GLOBALS */
-const int COLUMNS = 120; /* min value : 73*/
+const int COLUMNS = 94; // suggested 94-190
 const int WIDTH = COLUMNS*10;
-const int HEIGHT = 600;
+const int HEIGHT = 720;
 
 const double unit = (double)HEIGHT/COLUMNS;
 
@@ -42,6 +42,7 @@ class Graph {
     std::string menu_text;
     int current;
     SDL_Renderer *graphRenderer;
+    SDL_TimerID id;
 public:
     Graph(SDL_Renderer *renderer)
     : current(-1)
@@ -55,7 +56,8 @@ public:
                                     "(2) Bubble sort",
                                     "(3) Gnome sort",
                                     "(4) Bogo sort",
-                                    "(5) Heap sort" 
+                                    "(5) Heap sort",
+                                    "(ESC) Quit",
                                     };
         for(auto x : options)
             menu_text += x + ' ';
@@ -64,7 +66,26 @@ public:
         draw_menu();
         update_text("");
     }
-
+    
+    ~Graph() {
+        SDL_RemoveTimer(id);
+    }
+    
+    void delay() {
+        while(SDL_WaitEvent(&ev) && ev.type != SDL_USEREVENT) {
+            // Using an exception to get back to the main event loop
+            // Not a nice solution at all
+            if(ev.type == SDL_KEYDOWN && ev.key.keysym.sym == SDLK_SPACE) {
+                SDL_RemoveTimer(id);
+                update_text("Sort cancelled, please choose an option from below!");
+                reset();
+                draw();
+                draw_menu();
+                throw 911;
+            }
+        }
+    }
+    
     void draw() const {
         boxColor(graphRenderer, 0, 0, WIDTH, HEIGHT, 0x0000FF);
         for(int i = 0; i < COLUMNS; i++) {
@@ -102,7 +123,6 @@ public:
     }
     
     void scramble() {
-        reset();
         for(int i = 1; i <= COLUMNS*2; i++)
             swap_randomly();
         update_text("Array scrambled.");
@@ -126,16 +146,17 @@ public:
         SDL_RenderPresent(graphRenderer);
     }
     
-    void draw_menu() {
+    void draw_menu(int sorting = 0) {
+        boxColor(graphRenderer, 0, HEIGHT+21, WIDTH, HEIGHT+40, 0x000000FF);
+        stringRGBA(graphRenderer, 4, HEIGHT+28, sorting ? "(SPACE) Cancel" : menu_text.c_str(), 255, 255, 255, 255);
         lineColor(graphRenderer, 0, HEIGHT+20, WIDTH, HEIGHT+20, 0xFFFFFF88);
-        stringRGBA(graphRenderer, 4, HEIGHT+28, menu_text.c_str(), 255, 255, 255, 255);
         SDL_RenderPresent(graphRenderer);
     }
     
+    /* SORT ALGORITHMS */    
     void selection_sort() {
-        reset();
         update_text("Running selection sort...");
-        SDL_TimerID id = SDL_AddTimer(5, timer, NULL);
+        id = SDL_AddTimer(5, timer, NULL);
         
         int i, j, minindex;
         
@@ -150,7 +171,7 @@ public:
                     special.insert(j);
                 }
                 
-                while(SDL_WaitEvent(&ev) && ev.type != SDL_USEREVENT);
+                delay();
                 draw();
             }
             if (minindex != i) { // swap?
@@ -172,10 +193,9 @@ public:
         update_text("Selection sort done!");
     }
     
-    void bubble_sort() {        
-        reset();
+    void bubble_sort() {
         update_text("Running bubble sort...");
-        SDL_TimerID id = SDL_AddTimer(2, timer, NULL);
+        id = SDL_AddTimer(2, timer, NULL);
         
         int i, j;
      
@@ -183,7 +203,7 @@ public:
             for (j = 0; j < i; ++j) {
                 current = j;
                 
-                while(SDL_WaitEvent(&ev) && ev.type != SDL_USEREVENT);
+                delay();
                 draw();
                 
                 if (array[j+1] < array[j]) { // comparison
@@ -207,9 +227,8 @@ public:
     }
     
     void gnome_sort() {
-        reset();
         update_text("Running gnome sort...");
-        SDL_TimerID id = SDL_AddTimer(5, timer, NULL);
+        id = SDL_AddTimer(5, timer, NULL);
         
         int i = 0;
         
@@ -217,8 +236,8 @@ public:
             current = i;
             
             if (i == 0 || array[i-1] <= array[i]) { // in order?
-                current = -1;
                 i++;
+                current = i;
                 sorted.insert(i);
             }
             else {
@@ -229,7 +248,7 @@ public:
                 current = i;
             }
             
-            while(SDL_WaitEvent(&ev) && ev.type != SDL_USEREVENT);
+            delay();
             draw();
         }
         
@@ -242,9 +261,8 @@ public:
     }
 
     void bogo_sort() {
-        reset();
         update_text("Running bogo sort... (This may take a while, please be patient.)");
-        SDL_TimerID id = SDL_AddTimer(20, timer, NULL);
+        id = SDL_AddTimer(20, timer, NULL);
         
         while(!is_sorted()) {
             for(int i = 1; i <= COLUMNS*2; i++)
@@ -259,7 +277,7 @@ public:
             else
                 special.clear();
                 
-            while(SDL_WaitEvent(&ev) && ev.type != SDL_USEREVENT);
+            delay();
             draw();
         }
         
@@ -282,9 +300,8 @@ public:
     }
 
     void heap_sort(int N){
-        reset();
         update_text("Running heap sort...");
-        SDL_TimerID id = SDL_AddTimer(20, timer, NULL);
+        id = SDL_AddTimer(20, timer, NULL);
         
         /* heapify */
         for (int k = N/2; k >= 0; k--) {
@@ -305,7 +322,7 @@ public:
             stay in its proper placement */
             N--;
             
-            while(SDL_WaitEvent(&ev) && ev.type != SDL_USEREVENT);
+            delay();
             draw();
         }
         
@@ -328,7 +345,7 @@ public:
             special.insert(child);
             special.insert(child+1);
             
-            while(SDL_WaitEvent(&ev) && ev.type != SDL_USEREVENT);
+            delay();
             draw();
             
             /* get bigger child if there are two children */
@@ -345,8 +362,7 @@ public:
             else
                 return;
             
-            
-            while(SDL_WaitEvent(&ev) && ev.type != SDL_USEREVENT);
+            delay();
             draw();
         }
     }
@@ -382,43 +398,51 @@ int main(int argc, char *argv[]) {
     
     bool quit = false;
     while(SDL_WaitEvent(&ev) && !quit) {
-        switch(ev.type) {
-            case SDL_QUIT:
-                quit = true;
-            break;
-            case SDL_KEYDOWN:
-                switch(ev.key.keysym.sym) {
-                    case SDLK_ESCAPE:
-                        quit = true;
-                    break;
-                    case SDLK_BACKQUOTE:
-                    case SDLK_0:
-                    case SDLK_KP_0:
-                        g.scramble();
-                        g.draw();
-                    break;
-                    case SDLK_1:
-                    case SDLK_KP_1:
-                        g.selection_sort();
-                    break;
-                    case SDLK_2:
-                    case SDLK_KP_2:
-                        g.bubble_sort();
-                    break;
-                    case SDLK_3:
-                    case SDLK_KP_3:
-                        g.gnome_sort();
-                    break;
-                    case SDLK_4:
-                    case SDLK_KP_4:
-                        g.bogo_sort();
-                    break;
-                    case SDLK_5:
-                    case SDLK_KP_5:
-                        g.heap_sort(COLUMNS);
-                    break;
-                }
-            break;
+        try {
+            switch(ev.type) {
+                case SDL_QUIT:
+                    quit = true;
+                break;
+                case SDL_KEYDOWN:
+                    g.draw_menu(1); // draw cancel menu
+                    g.reset();
+                    switch(ev.key.keysym.sym) {
+                        case SDLK_ESCAPE:
+                            quit = true;
+                        break;
+                        case SDLK_BACKQUOTE:
+                        case SDLK_0:
+                        case SDLK_KP_0:
+                            g.scramble();
+                            g.draw();
+                        break;
+                        case SDLK_1:
+                        case SDLK_KP_1:
+                            g.selection_sort();
+                        break;
+                        case SDLK_2:
+                        case SDLK_KP_2:
+                            g.bubble_sort();
+                        break;
+                        case SDLK_3:
+                        case SDLK_KP_3:
+                            g.gnome_sort();
+                        break;
+                        case SDLK_4:
+                        case SDLK_KP_4:
+                            g.bogo_sort();
+                        break;
+                        case SDLK_5:
+                        case SDLK_KP_5:
+                            g.heap_sort(COLUMNS);
+                        break;
+                    }
+                    g.draw_menu(); // draw regular menu
+                break;
+            }
+        }
+        catch(int x) {
+            // empty
         }
     }
     
