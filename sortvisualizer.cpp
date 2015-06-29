@@ -1,4 +1,5 @@
-/* Sort visualizer
+/* 
+ * Sort visualizer by zsmb13@sch.bme.hu
  * 
  * Selection, bubble and gnome sort from
  * https://infoc.eet.bme.hu/ea07/
@@ -14,7 +15,7 @@
 #include <set>
 #include <string>
 #include <SDL.h>
-#include <SDL2_gfxPrimitives.h>
+#include "SDL2_gfxPrimitives.h"
 
 /* GLOBALS */
 const int COLUMNS = 94; // suggested 94-190
@@ -51,6 +52,7 @@ public:
         for(int i = 0; i < COLUMNS; i++)
             array[i] = i+1;
         
+        // Set menu bar strings here
         std::string options[] =  {  "(0) Scramble",
                                     "(1) Selection sort",
                                     "(2) Bubble sort",
@@ -81,7 +83,7 @@ public:
                 reset();
                 draw();
                 draw_menu();
-                throw 911;
+                throw 911; // This really could be just any integer number at all
             }
         }
     }
@@ -102,6 +104,7 @@ public:
             else
                 boxRGBA(graphRenderer, i*10, HEIGHT, (i+1)*10, HEIGHT-array[i]*unit, 200, 200, 200, 255);
             
+            // outline
             rectangleColor(graphRenderer, i*10, HEIGHT, (i+1)*10, HEIGHT-array[i]*unit, 0xFFFFFFFF);
         }
         SDL_RenderPresent(graphRenderer);
@@ -147,9 +150,13 @@ public:
     }
     
     void draw_menu(int sorting = 0) {
+        // Draw black box over previous menu
         boxColor(graphRenderer, 0, HEIGHT+21, WIDTH, HEIGHT+40, 0x000000FF);
+        // Display the appropriate string
         stringRGBA(graphRenderer, 4, HEIGHT+28, sorting ? "(SPACE) Cancel" : menu_text.c_str(), 255, 255, 255, 255);
+        // Redraw separator line
         lineColor(graphRenderer, 0, HEIGHT+20, WIDTH, HEIGHT+20, 0xFFFFFF88);
+        // Commit changes
         SDL_RenderPresent(graphRenderer);
     }
     
@@ -287,7 +294,7 @@ public:
             sorted.insert(i);
         draw();
         
-        // Celebrate improbability
+        // Celebrate extreme improbability
         update_text("Wow. Would you look at that. Bogo sort done.");
     }
     
