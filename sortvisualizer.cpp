@@ -202,7 +202,7 @@ public:
     
     void bubble_sort() {
         update_text("Running bubble sort...");
-        id = SDL_AddTimer(2, timer, NULL);
+        id = SDL_AddTimer(5, timer, NULL);
         
         int i, j;
      
@@ -235,7 +235,7 @@ public:
     
     void gnome_sort() {
         update_text("Running gnome sort...");
-        id = SDL_AddTimer(5, timer, NULL);
+        id = SDL_AddTimer(6, timer, NULL);
         
         int i = 0;
         
@@ -269,7 +269,7 @@ public:
 
     void bogo_sort() {
         update_text("Running bogo sort... (This may take a while, please be patient.)");
-        id = SDL_AddTimer(20, timer, NULL);
+        id = SDL_AddTimer(50, timer, NULL);
         
         while(!is_sorted()) {
             for(int i = 1; i <= COLUMNS*2; i++)
@@ -308,7 +308,7 @@ public:
 
     void heap_sort(int N){
         update_text("Running heap sort...");
-        id = SDL_AddTimer(20, timer, NULL);
+        id = SDL_AddTimer(24, timer, NULL);
         
         /* heapify */
         for (int k = N/2; k >= 0; k--) {
